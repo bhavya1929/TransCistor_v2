@@ -44,7 +44,7 @@ for(i in 1:nrow(metadata)){
     results <- TransCistor(input.file = current_file, 
                            id.type = file.type, 
                            species = species, 
-                           TAD='All',
+                           TAD='All',   # Else path to your TAD file
                            lncRNA.name = name,
                            lncRNA.chr = chr, 
                            lncRNA.tss = tss, 
