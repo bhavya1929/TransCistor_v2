@@ -22,9 +22,8 @@ TransCistor is built as a webserver (https://transcistor.unibe.ch/) or a standal
 * Standalone version is recommended for analysing multiple datasets. Executing simply requires the start_TransCistor.R script. The tested dataset can be changed by manipulating the metadata and RegulationFiles directory
 
 ``` 
-TransCistor <- function(input.file, id.type, species, cell = "H1-NPC",
-                        lncRNA.name, lncRNA.chr, lncRNA.tss, lncRNA.strand = "+",
-                        enricher.threshold = 0, simulations = 100000 )
+TransCistor <- function(input.file, id.type, species, TAD='All',
+                        lncRNA.name, lncRNA.chr, lncRNA.tss, lncRNA.strand = "+", simulations = 100000 )
 ```
 
 You can use the plots.R file to get results for single lncRNAs.  You may perform the analysis as shown below. It should take a few seconds in a normal computer. \
