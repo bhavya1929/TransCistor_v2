@@ -1,6 +1,6 @@
-TransCistor <- function(input.file, id.type, species, cell = "H1-NPC",
+TransCistor <- function(input.file, id.type, species, TAD = "All",
                         lncRNA.name, lncRNA.chr, lncRNA.tss, lncRNA.strand = "+",
-                        enricher.threshold = 0, simulations = 100000 ){
+                        simulations = 100000 ){
   library(rlang)
   library(dplyr)
   library(rlist)
@@ -16,7 +16,6 @@ TransCistor <- function(input.file, id.type, species, cell = "H1-NPC",
   options(scipen = 999)
   `%!in%` = Negate(`%in%`)
   
-  #TEST PARAMS - REMOVE WHEN DONE#######
   
   #############################
   #   Input/Reference files   #
@@ -27,12 +26,6 @@ TransCistor <- function(input.file, id.type, species, cell = "H1-NPC",
   if((species == "human") || (species == "mouse")){
     gencode_file <- paste0("References/Gencode/", species, "_gencode.txt")
     gencode <- read.table(gencode_file, sep="\t", header=T, stringsAsFactors=FALSE)
-    tad_file <- paste0("References/TADs/", species,".ESC.txt")
-    if(file.exists(tad_file)){
-      tad <- read.table(paste0("References/TADs/", species,".ESC.txt"), sep="\t", header=F, stringsAsFactors=FALSE)
-    }else{
-      print("No tad file could be read. species should be either human or mouse.")
-    }
   }else{
     print("species should be either human or mouse.")
     return()
@@ -58,20 +51,6 @@ TransCistor <- function(input.file, id.type, species, cell = "H1-NPC",
   #############################
   #      Pre-processing       #
   #############################
-  ### removal of same-strand overlapping genes
-  # if(any(df.raw$chr == lncRNA.chr & df.raw$TSS == lncRNA.tss)){
-  #   lncRNA.dat <- df.raw[df.raw$chr == lncRNA.chr & df.raw$TSS == lncRNA.tss,][1,]
-  #   remove.rows <- (df.raw$start %in% lncRNA.dat$start:lncRNA.dat$end |
-  #                              df.raw$end %in% lncRNA.dat$start:lncRNA.dat$end) &
-  #     df.raw$strand == lncRNA.strand &
-  #     df.raw$chr == lncRNA.chr &
-  #     !(df.raw$chr == lncRNA.chr & df.raw$TSS == lncRNA.tss)
-  #   if(any(remove.rows)){
-  #     print('Removing same strand overlaps:')
-  #     print(df.raw[remove.rows,])
-  #     df.raw <- df.raw[!remove.rows,]
-  #   }
-  # }
   df.raw <- filter(df.raw, !(chr == lncRNA.chr & TSS == lncRNA.tss))
   df.raw$SYMBOL <- toupper(df.raw$SYMBOL)
   df.raw.targets <- filter(df.raw, Regulation != 0)
@@ -82,7 +61,11 @@ TransCistor <- function(input.file, id.type, species, cell = "H1-NPC",
     combined_heatmap <- qplot(1:2,1:2)+xlab("This is a dummy plot")+ylab("No targets found")
     barplot_tad <- qplot(1:2,1:2)+xlab("This is a dummy plot")+ylab("No targets found")
     barplot_tad <- qplot(1:2,1:2)+xlab("This is a dummy plot")+ylab("No targets found")
-    TADs <- list.files("References/TADs/", species)
+    if(TAD == "All"){
+      TADs <- list.files("References/TADs/", species)
+    }else{
+      TADs <- TAD
+    }
     Results_TADs = data.frame(TAD = "",Proximal = rep(0, length(TADs)), 
                               Proximal.Acticated = rep(0, length(TADs)), Proximal.Repressed = rep(0, length(TADs)),
                               Total = rep(0, length(TADs)), Total.Activated = rep(0, length(TADs)), Total.Repressed = rep(0, length(TADs)), 
@@ -105,7 +88,7 @@ TransCistor <- function(input.file, id.type, species, cell = "H1-NPC",
                           TAD.Acti.Bayes = 1, TAD.Repr.Bayes = 1,
                           Window.Activator = 1, Window.Repressor = 1,
                           Distance.Activator = 1, Distance.Repressor = 1)
-
+    
     
     return(list(
       Results_TADs,
@@ -123,7 +106,11 @@ TransCistor <- function(input.file, id.type, species, cell = "H1-NPC",
   #############################
   #            TAD            #
   #############################
-  TADs = list.files("References/TADs/", species)
+  if(TAD=="All"){
+    TADs <- paste0("References/TADs/",list.files("References/TADs/", "human"))
+  }else{
+    TADs <- TAD
+  }
   Results_TADs = data.frame(TAD = "",Proximal = rep(0, length(TADs)), 
                             Proximal.Acticated = rep(0, length(TADs)), Proximal.Repressed = rep(0, length(TADs)),
                             Total = rep(0, length(TADs)), Total.Activated = rep(0, length(TADs)), Total.Repressed = rep(0, length(TADs)), 
@@ -131,7 +118,7 @@ TransCistor <- function(input.file, id.type, species, cell = "H1-NPC",
                             Repressor.mid = rep(1,length(TADs)), Activator.Bayes = rep(1,length(TADs)), Repressor.Bayes = rep(1,length(TADs)))
   TAD_bounaries <- c()
   for(f in 1:length(TADs)){
-    tad <- read.table(paste0("References/TADs/",TADs[f]))
+    tad <- read.table(TADs[f])
     colnames(tad) <- c("chr", "start", "end")
     lncRNA.tad <- filter(tad,chr == lncRNA.chr & start <= lncRNA.tss & end >= lncRNA.tss)
     if(nrow(lncRNA.tad) == 0){
@@ -142,6 +129,8 @@ TransCistor <- function(input.file, id.type, species, cell = "H1-NPC",
       TAD_bounaries <- rbind(TAD_bounaries, lncRNA.tad)
       tad.proximal.genes <- filter(df.raw, chr == lncRNA.tad$chr & TSS > lncRNA.tad$start & TSS < lncRNA.tad$end)
       tad.proximal.targets <- filter(tad.proximal.genes, SYMBOL %in% df.raw.targets.filtered$SYMBOL)
+      
+     
       
       #estimate numbers for statistical tests
       prox <- nrow(tad.proximal.genes)
@@ -185,10 +174,12 @@ TransCistor <- function(input.file, id.type, species, cell = "H1-NPC",
                         harmonic.mean(OverlapTADs$Activator.mid),harmonic.mean(OverlapTADs$Repressor.mid),
                         harmonic.mean(OverlapTADs$Activator.Bayes),harmonic.mean(OverlapTADs$Repressor.Bayes))
     }else{Pvalues[1:6] <- rep(1,6)}
+    
     TAD_bounaries = data.frame(chr = lncRNA.chr, 
                                start = min(TAD_bounaries$start),
                                end = max(TAD_bounaries$end))
     LocusPlot.genes <- filter(df.raw, chr == TAD_bounaries$chr & TSS > TAD_bounaries$start & TSS < TAD_bounaries$end)
+    
     
   }
   
@@ -198,7 +189,7 @@ TransCistor <- function(input.file, id.type, species, cell = "H1-NPC",
                               Proximal.Acticated = rep(0, length(windows_vector)), Proximal.Repressed = rep(0, length(windows_vector)),
                               Total = rep(0, length(windows_vector)), Total.Activated = rep(0, length(windows_vector)), Total.Repressed = rep(0, length(windows_vector)),
                               Activator = rep(1, length(windows_vector)), Repressor = rep(1, length(windows_vector)))
-
+  
   targets <- nrow(df.raw.targets.filtered)
   targets.activated <- nrow(df.raw.targets.filtered[which(df.raw.targets.filtered$Regulation == -1),])
   targets.repressed <- nrow(df.raw.targets.filtered[which(df.raw.targets.filtered$Regulation == 1),])
@@ -270,5 +261,3 @@ TransCistor <- function(input.file, id.type, species, cell = "H1-NPC",
     LocusPlot.genes
   ))
 }
-
-
