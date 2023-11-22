@@ -11,7 +11,7 @@ TransCistor-analogue, defines a distance statistic as the mean TSS-to-TSS distan
 
 ### Dependencies
 
-TransCistor is built as a webserver (https://transcistor.unibe.ch/) or standalone script.
+TransCistor is built as a webserver (https://transcistor.unibe.ch/) or a standalone script.
 * The webserver is a shiny app and has no dependencies.
 * The standalone version is built in R and the main dependencies are R packages: tidyverse, dplyr, rlang, rlist, etc.
 
@@ -48,17 +48,17 @@ species <- metadata[i[num],]$SPECIES
 #TransCistor function call
 results <- TransCistor(input.file = current_file, 
                          id.type = file.type, 
-                         species = species, 
+                         species = species,
+                         TAD='All' ##Or user TAD file path
                          lncRNA.name = name,
                          lncRNA.chr = chr, 
                          lncRNA.tss = tss, 
-                         lncRNA.strand = strand, 
-                         enricher.threshold = enrichr_threshold
+                         lncRNA.strand = strand
   )
 
 ```
 
-...or visit the webserver to get publucation ready figures!
+...or visit the webserver to get publication-ready figures!
 
 ## Main contributors' names and contact info. 
 
