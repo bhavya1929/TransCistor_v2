@@ -18,7 +18,6 @@ output_directory <- "Results/"
 output_name <- 'TCResults_final.RData'
 
 source( "transcistor.R")
-enrichr_threshold <- 0
 
 TADs = c()
 Windows = c()
@@ -48,8 +47,7 @@ for(i in 1:nrow(metadata)){
                            lncRNA.name = name,
                            lncRNA.chr = chr, 
                            lncRNA.tss = tss, 
-                           lncRNA.strand = strand,
-                           filename=file_name
+                           lncRNA.strand = strand
                            )
     TADs <- rbind(TADs, results[[1]])
     Windows <- rbind(Windows, results[[2]])
